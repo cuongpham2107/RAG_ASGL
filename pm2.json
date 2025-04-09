@@ -1,0 +1,9 @@
+{
+    "apps": [
+      {
+        "name": "Chat Rag with Documents",
+        "script": "npm",
+        "args": "run start"
+      }
+    ]
+  }

@@ -1,0 +1,5 @@
+{
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "postman.settings.dotenv-detection-notification-visibility": false,
+    "git.ignoreLimitWarning": true
+}
