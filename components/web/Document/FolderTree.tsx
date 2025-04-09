@@ -17,6 +17,7 @@ import FileItem from "./File/FileItem";
 import FolderItem from "./Folder/FolderItem";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDocument } from "@/hooks/use-document";
+import { useFileDownload } from "@/hooks/use-file-download";
 
 export function FolderTree() {
   // Use the document hook
@@ -40,7 +41,7 @@ export function FolderTree() {
     handleBulkDelete,
     clearSelection,
   } = useDocument();
-
+const { handleFileView } = useFileDownload();
   // Effect hooks
   useEffect(() => {
     fetchFolders();
@@ -99,6 +100,7 @@ export function FolderTree() {
                   allFiles={files}
                   onDelete={handleDeleteFiles}
                   onDownload={handleFileDownload}
+                  onView={handleFileView}
                 />
               ))}
             </TableBody>
