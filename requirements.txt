@@ -20,7 +20,7 @@ docx2txt
 unstructured
 unstructured_inference
 ocrmypdf
-
+openpyxl
 
 #mcp
 mcp

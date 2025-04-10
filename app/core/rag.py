@@ -11,6 +11,7 @@ from langchain_community.document_loaders import (
     TextLoader,
     Docx2txtLoader,
     UnstructuredPDFLoader,
+    UnstructuredExcelLoader,
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.config import configs
@@ -272,12 +273,41 @@ class RagSetup:
     def delete_docs(self, slug_file: str):
         """Xóa tài liệu từ vector store."""
         if not self.vector_store:
-            raise ValueError("🚨 Vector store is not set. Please process files first.")
+            self._load_vector_store()
+            if not self.vector_store:
+                raise ValueError("🚨 Vector store is not set. Please process files first.")
 
-        file_filter = {"source_file": {"$in": slug_file}}
-        print(f"🔍 Deleting documents: {file_filter}")
-        self.vector_store.delete_documents(filter=file_filter)
-        print("✅ Documents deleted successfully!")
+        # Validate input
+        if not slug_file:
+            raise ValueError("🚨 Empty slug_file provided. Cannot proceed with deletion.")
+
+        # Create proper filter with correct syntax
+        file_filter = {"source_file": slug_file}
+        print(f"🔍 Planning to delete documents with filter: {file_filter}")
+
+        # Check if documents exist before attempting deletion
+        try:
+            matching_docs = self.vector_store.get(
+                where=file_filter,
+                include=["metadatas"],
+                limit=1
+            )
+            
+            if not matching_docs or len(matching_docs["ids"]) == 0:
+                print(f"⚠️ No documents found with source_file: {slug_file}")
+                return 0  # Return 0 to indicate no documents were deleted
+                
+            # Get total count of documents to be deleted
+            count = len(self.vector_store.get(where=file_filter, include=[])["ids"])
+            print(f"🔍 Found {count} documents to delete")
+            
+            # Proceed with deletion
+            self.vector_store.delete(where=file_filter)
+            print(f"✅ Successfully deleted {count} documents!")
+            return count
+        except Exception as e:
+            print(f"❌ Error during document deletion: {str(e)}")
+            raise ValueError(f"Failed to delete documents: {str(e)}")
     def update_document_owner(self, slug_file: str, new_owner: str):
         """
         Cập nhật trường 'owner' cho các tài liệu dựa trên slug_file.
@@ -549,8 +579,15 @@ class RagSetup:
                 # Use the same filepath since we're overwriting the original
                 print("📄 Using PyPDFLoader with OCR-processed PDF")
                 return PyPDFLoader(filepath)
+        elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+            print("📄 Using UnstructuredExcelLoader")
+            return UnstructuredExcelLoader(filepath)
 
-        elif filename.endswith(".docx"):
+        elif filename.endswith(".csv"):
+            print("📄 Using CSVLoader")
+            return CSVLoader(filepath)
+
+        elif filename.endswith(".docx") or filename.endswith(".doc"):
             print("📄 Using Docx2txtLoader")
             return Docx2txtLoader(filepath)
 
@@ -941,15 +978,10 @@ Title:
                     filter_dict = {
                         "$or": [
                             # Direct match (owner is exactly user_id)
-                            {"owner": user_id_str},
-                            {"owner": int(user_id) if user_id is not None else None},
-                            # Pattern match (owner contains user_id in comma-separated list)
-                            # These operators work with Chroma's filtering system
-                            {"owner": {"$contains": f",{user_id_str},"}},
-                            {"owner": {"$contains": f"{user_id_str},"}},
-                            {"owner": {"$contains": f",{user_id_str}"}},
+                            {"owner": {"$eq": user_id_str}},
+                            {"owner": {"$eq": int(user_id) if user_id is not None else None}},
                             # Shared with field
-                            {"shared_with": user_id_str}
+                            {"shared_with": {"$eq": user_id_str}}
                         ],  
                     }
                 
@@ -1131,15 +1163,10 @@ Title:
                     filter_dict = {
                         "$or": [
                             # Direct match (owner is exactly user_id)
-                            {"owner": user_id_str},
-                            {"owner": int(user_id) if user_id is not None else None},
-                            # Pattern match (owner contains user_id in comma-separated list)
-                            # These operators work with Chroma's filtering system
-                            {"owner": {"$contains": f",{user_id_str},"}},
-                            {"owner": {"$contains": f"{user_id_str},"}},
-                            {"owner": {"$contains": f",{user_id_str}"}},
+                            {"owner": {"$eq": user_id_str}},
+                            {"owner": {"$eq": int(user_id) if user_id is not None else None}},
                             # Shared with field
-                            {"shared_with": user_id_str}
+                            {"shared_with": {"$eq": user_id_str}}
                         ],  
                     }
                 

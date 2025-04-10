@@ -153,3 +153,25 @@ async def forgot_password(
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router_auth.post("/create_admin_user")
+async def create_admin_user():
+    try:
+        user_id = user_model.create_user(
+            username='admin@admin.com',
+            password='password',
+            email='admin@example.com',
+            phone='0984559557',
+            address='NB',
+            full_name="Admintrator",
+            role="admin",
+            role_id=1  # Role ID cho admin
+        )
+        return {
+            "message": "Admin user created successfully",
+            "user_id": user_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
