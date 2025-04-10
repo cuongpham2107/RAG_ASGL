@@ -87,15 +87,22 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         } else if (sourceData && typeof sourceData === 'object') {
                           // Safe extraction of name and id
                           const sourceName = sourceData.name ? String(sourceData.name) : "Không có tên";
+
                           const sourceId = sourceData.id ? 
                             (typeof sourceData.id === 'number' ? sourceData.id : parseInt(sourceData.id)) : 0;
                           
                           return (
-                            <span 
-                              onClick={() => handleViewAndDownload(sourceId)}
-                              className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
-                              {sourceName}
-                            </span>
+                            sourceData.name ? (
+                              <span 
+                                onClick={() => handleViewAndDownload(sourceId)}
+                                className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
+                                {sourceName}
+                              </span>
+                            ) : ( 
+                              <span className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200">
+                                {"Không có thông tin"}
+                              </span>
+                            )
                           );
                         } else {
                           

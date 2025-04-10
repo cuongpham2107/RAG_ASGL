@@ -47,7 +47,7 @@ export async function getFile(idFile: number) {
 
 export async function getFilesRecent(){
     try {
-        const response = await fetch(`${API_URL}/files/recent`, {
+        const response = await fetch(`${API_URL}/files/recent/`, {
             headers: {
             Authorization: `Bearer ${token}`
             }

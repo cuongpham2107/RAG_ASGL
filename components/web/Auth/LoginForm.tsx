@@ -50,20 +50,21 @@ export function LoginForm({
           title: "Lỗi",
           description: result.error,
         })
-        return
+      } else {
+        router.push('/chat')
       }
-      // setCurrentMenuItem(
-      //   configMenu.menu[0].items.find((item) => item.slug === "chat")!.id,
-      //   configMenu.menu[0].id
-      // );
-      router.push('/chat')
-
     } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Lỗi",
         description: error instanceof Error ? error.message : "Đã có lỗi xảy ra",
       })
+    } finally {
+      // Reset form values regardless of success or failure
+      form.reset({
+        username: "",
+        password: "",
+      });
     }
   }
   return (

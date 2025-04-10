@@ -52,7 +52,6 @@ import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import {
   deleteChatHistory,
-  getChatHistories,
   updateChatHistory,
 } from "@/lib/api/chat-history";
 import { useChatHistoriesStore } from "@/hooks/use-chat-histories";
@@ -121,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleDelete = async (id: number) => {
     deleteChatHistory(id)
       .then(() => {
-        getChatHistories();
+        fetchChatHistories();
         toast({
           title: "Xóa thành công",
           description: "Đã xóa cuộc trò chuyện",

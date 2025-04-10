@@ -2,8 +2,6 @@ import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
-  FileSearch,
-  FileArchive,
   Send } from "lucide-react";
 // import ChooseFileInlineChat from "./ChooseFileInlineChat";
 import FileList from "./FileList";
@@ -20,8 +18,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   message,
   setMessage,
   handleChatMessage,
-  isDeduce,
-  setIsDeduce,
+  // isDeduce,
+  // setIsDeduce,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -69,7 +67,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1 sm:space-x-2">
               {/* <ChooseFileInlineChat /> */}
-              <div
+              {/* <div
                 className={`flex flex-row items-center space-x-1 sm:space-x-2 bg-gray-100 rounded-2xl sm:rounded-3xl px-2 sm:px-3 py-1 sm:py-1.5 cursor-pointer border border-gray-200 ${
                   isDeduce && "bg-blue-100 border-blue-200"
                 }`}
@@ -87,7 +85,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 >
                   Suy luận
                 </span>
-              </div>
+              </div> */}
             </div>
             <Button
               variant="ghost"
