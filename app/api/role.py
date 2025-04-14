@@ -114,15 +114,83 @@ async def set_resource_permissions(
     current_user: str = Depends(authenticate)
 ):
     """Set permissions for a resource"""
-    if not role_model.set_resource_permissions(
-        role_id, resource_type, resource_id,
-        can_read, can_write, can_delete
-    ):
+    try:
+        if not role_model.set_resource_permissions(
+            role_id, resource_type, resource_id,
+            can_read, can_write, can_delete
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to set resource permissions"
+            )
+        
+        success_count = 0
+        failure_count = 0
+        
+        if can_read and resource_type == ResourceType.FILE:
+            # Get the file details
+            file = file_model.get_file_by_id(resource_id)
+            if not file:
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            # Get users in the role to update document ownership
+            users = user_model.get_user_by_role_id(role_id)
+            file_slug = file.get("slug")
+            
+            if not file_slug:
+                print(f"⚠️ File missing slug: {file}")
+                raise HTTPException(status_code=400, detail="File missing slug identifier")
+            
+            if users:
+                for user in users:
+                    user_id = user.get("id")
+                    if user_id is not None:
+                        try:
+                            print(f"📄 Updating document {file_slug} to add owner: {user_id}")
+                            updated = rag.update_document_owner(file_slug, str(user_id))
+                            if updated > 0:
+                                success_count += 1
+                            else:
+                                failure_count += 1
+                                print(f"⚠️ No documents updated for file {file_slug}, user {user_id}")
+                        except Exception as e:
+                            failure_count += 1
+                            print(f"❌ Error updating ownership for file {file_slug}, user {user_id}: {str(e)}")
+            else:
+                # If no users in role, just update with role_id
+                try:
+                    updated = rag.update_document_owner(file_slug, str(role_id))
+                    if updated > 0:
+                        success_count = 1
+                except Exception as e:
+                    print(f"❌ Error updating ownership with role_id for file {file_slug}: {str(e)}")
+                    raise HTTPException(status_code=400, detail=f"Failed to set read permission: {str(e)}")
+
+        return {
+            "message": "Resource permissions set successfully",
+            "details": {
+                "role_id": role_id,
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                "permissions": {
+                    "read": can_read,
+                    "write": can_write,
+                    "delete": can_delete
+                },
+                "document_updates": {
+                    "successful": success_count,
+                    "failed": failure_count
+                }
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in set_resource_permissions: {str(e)}")
         raise HTTPException(
-            status_code=400,
-            detail="Failed to set resource permissions"
+            status_code=500,
+            detail=f"Failed to set resource permissions: {str(e)}"
         )
-    return {"message": "Resource permissions set successfully"}
 
 # Parameterized routes
 @router_role.get("/{role_id}")
@@ -247,22 +315,73 @@ async def set_full_access(
     current_user: str = Depends(authenticate)
 ):
     """Set full access to a resource"""
-    if not role_model.set_full_access(role_id):
-        raise HTTPException(
-            status_code=404,
-            detail="Role not found"
-        )
-    
-    #Get list users in role_id
-    users = user_model.get_user_by_role_id(role_id)
-    # Get list files 
-    files = file_model.get_all_files()
-    for file in files:
-        for user in users:
-            rag.update_document_owner(
-                file["slug"],
-                user["id"],
+    try:
+        # Set full access in the role model
+        if not role_model.set_full_access(role_id):
+            raise HTTPException(
+                status_code=404,
+                detail="Role not found"
             )
-    
-    
-    return {"message": "Full access granted successfully"}
+        
+        # Get list of users in the role
+        users = user_model.get_user_by_role_id(role_id)
+        if not users:
+            print(f"⚠️ No users found for role_id: {role_id}")
+            return {"message": "Full access granted successfully, but no users found in role"}
+        
+        # Get list of files
+        files = file_model.get_all_files()
+        if not files:
+            print("⚠️ No files found in system")
+            return {"message": "Full access granted successfully, but no files found in system"}
+        
+        # Track success and failure counts
+        success_count = 0
+        failure_count = 0
+        
+        # Update document ownership for each file and user
+        for file in files:
+            file_slug = file.get("slug")
+            if not file_slug:
+                print(f"⚠️ File missing slug: {file}")
+                continue
+                
+            for user in users:
+                user_id = user.get("id")
+                if user_id is None:
+                    print(f"⚠️ User missing ID: {user}")
+                    continue
+                    
+                try:
+                    # Add this user as an owner to the document
+                    print(f"📄 Updating document {file_slug} to add owner: {user_id}")
+                    updated = rag.update_document_owner(file_slug, str(user_id))
+                    
+                    if updated > 0:
+                        success_count += 1
+                    else:
+                        failure_count += 1
+                        print(f"⚠️ No documents updated for file {file_slug}, user {user_id}")
+                        
+                except Exception as e:
+                    failure_count += 1
+                    print(f"❌ Error updating ownership for file {file_slug}, user {user_id}: {str(e)}")
+        
+        # Return results
+        return {
+            "message": "Full access granted successfully",
+            "details": {
+                "role_id": role_id,
+                "users_count": len(users),
+                "files_count": len(files),
+                "successful_updates": success_count,
+                "failed_updates": failure_count
+            }
+        }
+        
+    except Exception as e:
+        print(f"❌ Error in set_full_access: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set full access: {str(e)}"
+        )

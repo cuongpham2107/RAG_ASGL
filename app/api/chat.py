@@ -45,16 +45,16 @@ async def add_new_chat_message(
             last_heartbeat = asyncio.get_event_loop().time()
             
             # Get user
-            user = user_model.get_by_username(current_user[0])
+            user = user_model.get_by_username(current_user)
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            # Create chat history
+            # Create chat history - fixed: chat_name is now treated as a string
             chat_name = await rag.generate_chat_history_name(question)
             
             chat_history_id = chat_history_model.create(
-                name=chat_name.content,
-                slug=sanitize_filename(chat_name.content),
+                name=chat_name,  # Now using chat_name directly as a string
+                slug=sanitize_filename(chat_name),  # Using chat_name as string
                 user_id=user['id']
             )
 
@@ -122,7 +122,6 @@ async def add_new_chat_message(
         raise HTTPException(status_code=500, detail=str(e))
 
     
-
 @router_chat.post("/{chat_history_id}")
 async def add_chat_message_by_chat_history_id(
     chat_history_id: int,
@@ -220,4 +219,4 @@ async def add_chat_message_by_chat_history_id(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+

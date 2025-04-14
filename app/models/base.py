@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional
-from app.api.dependencies import db
 
 class BaseModel:
     def __init__(self):
+        # Import db động khi cần thiết để tránh circular import
+        from app.api.dependencies import db
         self.db = db
 
     @staticmethod

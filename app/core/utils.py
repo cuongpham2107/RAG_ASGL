@@ -22,9 +22,9 @@ async def ocr_pdf_processing(input_path: str, output_path: str = None):
         result = ocrmypdf.ocr(
             input_file=input_path,
             output_file=temp_output,
-            language="eng",
+            language="eng+vie",
             deskew=True,
-            force_ocr=True,
+            force_ocr=True, 
             optimize=1,  # Use an integer value (1-3) for optimization level
             output_type="pdf"
         )

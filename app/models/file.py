@@ -36,7 +36,6 @@ class FileModel(BaseModel):
 
         return files, total
 
-
     def get_all_files(self) -> List[Dict]:
         """Get all files"""
         query = "SELECT * FROM files"
