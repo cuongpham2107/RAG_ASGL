@@ -49,6 +49,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
       })
     });
   }
+
+  console.log(messages);
   return (
     <div className="flex-1 overflow-y-auto p-2 sm:p-4 w-full max-w-full sm:max-w-4xl scroll-smooth h-full">
       <div className="space-y-3 sm:space-y-4">
@@ -63,67 +65,58 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
               <div className="bg-white px-2 sm:px-4 py-2 w-full text-sm sm:text-base">
                 <MarkdownContent>{chat.answer}</MarkdownContent>
                 {chat.sources && (
-                    <div className="text-xs mt-2 flex flex-row items-center gap-1.5 text-gray-600">
-                    <Link className="text-blue-500" size={14} />
-                    <p className="font-medium">Nguồn tài liệu:</p>
-                    {(() => {
-                      try {
-                        const sourceData = typeof chat.sources === 'string' 
-                          ? JSON.parse(chat.sources) 
-                          : chat.sources;
-                        if (Array.isArray(sourceData)) {
-                          return (
-                            <div className="flex flex-wrap gap-1">
-                              {sourceData.map((source, i) => (
-                                <span 
-                                  key={i}
-                                  onClick={() => handleViewAndDownload(typeof source.id === 'number' ? source.id : parseInt(source.id))}
-                                  className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
-                                  {typeof source.name === 'string' ? source.name : String(source.name)}
-                                </span>
-                              ))}
-                            </div>
-                          );
-                        } else if (sourceData && typeof sourceData === 'object') {
-                          // Safe extraction of name and id
-                          const sourceName = sourceData.name ? String(sourceData.name) : "Không có tên";
-
-                          const sourceId = sourceData.id ? 
-                            (typeof sourceData.id === 'number' ? sourceData.id : parseInt(sourceData.id)) : 0;
-                          
-                          return (
-                            sourceData.name ? (
-                              <span 
-                                onClick={() => handleViewAndDownload(sourceId)}
-                                className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
-                                {sourceName}
-                              </span>
-                            ) : ( 
-                              <span className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200">
-                                {"Không có thông tin"}
-                              </span>
-                            )
-                          );
-                        } else {
-                          
-                          return (
-                            <span className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200">
-                              {"Không có thông tin"}
-                            </span>
-                          );
-                        }
+                  <div className="text-xs mt-2 flex flex-row items-center gap-1.5 text-gray-600">
+                  <Link className="text-blue-500" size={14} />
+                  <p className="font-medium">Nguồn tài liệu:</p>
+                  {(() => {
+                    try {
+                    const sourceData = typeof chat.sources === 'string' 
+                      ? JSON.parse(chat.sources) 
+                      : chat.sources;
+                    if (Array.isArray(sourceData)) {
+                      return (
+                      <div className="flex flex-wrap gap-1">
+                        {sourceData.map((source, i) => (
+                        <span 
+                          key={i}
+                          onClick={() => source.id && handleViewAndDownload(typeof source.id === 'number' ? source.id : parseInt(source.id))}
+                          className={`inline-block truncate max-w-xs ${source.id ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer' : 'bg-gray-50 text-gray-500'} font-medium rounded-md px-2 py-0.5 border border-blue-200 transition-colors`}>
+                          {typeof source.name === 'string' && source.name ? source.name : "Không có tên"}
+                        </span>
+                        ))}
+                      </div>
+                      );
+                    } else if (sourceData && typeof sourceData === 'object') {
+                      // Handle case with null or empty fields
+                      const sourceName = sourceData.name && sourceData.name !== "" ? String(sourceData.name) : "Không có tên";
+                      const sourceId = sourceData.id ? 
+                      (typeof sourceData.id === 'number' ? sourceData.id : parseInt(sourceData.id)) : null;
                       
-                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                      } catch (error) {
-                       
-                        return (
-                          <span className="inline-block truncate max-w-xs bg-blue-50 text-blue-700 font-medium rounded-md px-2 py-0.5 border border-blue-200">
-                            {typeof chat.sources === 'string' ? chat.sources : "Không có thông tin"}
-                          </span>
-                        );
-                      }
-                    })()}
-                    </div>
+                      return (
+                      <span 
+                        onClick={() => sourceId && handleViewAndDownload(sourceId)}
+                        className={`inline-block truncate max-w-xs ${sourceId ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer' : 'bg-gray-50 text-gray-500'} font-medium rounded-md px-2 py-0.5 border border-blue-200 transition-colors`}>
+                        {sourceName}
+                      </span>
+                      );
+                    } else {
+                      return (
+                      <span className="inline-block truncate max-w-xs bg-gray-50 text-gray-500 font-medium rounded-md px-2 py-0.5 border border-gray-200">
+                        {"Không có thông tin"}
+                      </span>
+                      );
+                    }
+                    
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    } catch (error) {
+                    return (
+                      <span className="inline-block truncate max-w-xs bg-gray-50 text-gray-500 font-medium rounded-md px-2 py-0.5 border border-gray-200">
+                      {typeof chat.sources === 'string' ? chat.sources : "Không có thông tin"}
+                      </span>
+                    );
+                    }
+                  })()}
+                  </div>
                 )}
               </div>
             </div>
