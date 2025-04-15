@@ -633,6 +633,7 @@ Trả về dữ liệu JSON với cấu trúc:
 
                 if user_id_str:
                     filter_dict = {"owner": {"$in": [user_id_str]}}
+                    
                 # Lấy retriever và truy vấn tài liệu
                 retriever = vector_store_manager.get_retriever(
                     filter_dict=filter_dict, k=2

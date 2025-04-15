@@ -162,3 +162,20 @@ class FolderModel(BaseModel):
         except Exception as e:
             print(f"Error deleting folder: {e}")
             return False
+
+
+    def build_tree(self) -> List[Dict]:
+        """Build a tree structure from the database"""
+        folders = self.get_all_folders()
+        folder_dict = {folder['id']: folder for folder in folders}
+        tree = []
+        for folder in folders:
+            folder['children'] = []
+            if folder['parent_id'] == 0:
+                tree.append(folder)
+            else:
+                parent = folder_dict.get(folder['parent_id'])
+                if parent:
+                    parent['children'].append(folder)
+        return tree
+   

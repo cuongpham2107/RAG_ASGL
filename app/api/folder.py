@@ -196,3 +196,17 @@ async def delete(
         
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+@router_folder.get("/build-tree/")
+async def build_tree(
+    current_user: str = Depends(authenticate)
+):
+    try:
+        tree = folder_model.build_tree()
+        return {
+            "message": "Folder tree built successfully",
+            "data": tree
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

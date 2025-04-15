@@ -254,3 +254,148 @@ async def view_file(
                 )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router_file.post("/update-parent")
+async def update_parent(
+    folder_id: int = Form(..., description="ID thư mục cha mới"),
+    file_ids: List[int] = Form(..., description="Danh sách ID của file thay đổi thư mục cha"),
+    current_user: str = Depends(authenticate),
+):
+    try:
+        # Kiểm tra xem thư mục cha mới có tồn tại không
+        folder = folder_model.get_by_id(folder_id)
+        if not folder:
+            raise HTTPException(status_code=404, detail="Folder not found")
+
+        results = []
+        success_count = 0
+        errors = []
+
+        # Log before update
+        print(f"Starting update process for {len(file_ids)} files to folder_id={folder_id}")
+
+        # Cập nhật thư mục cha cho các file
+        for file_id in file_ids:
+            file = file_model.get_file_by_id(file_id)
+            if not file:
+                errors.append(f"File with ID {file_id} not found")
+                continue
+            
+            print(f"Processing file {file_id}: '{file.get('name')}', current path: {file.get('filepath')}")
+            
+            # Cập nhật thư mục cha trong cơ sở dữ liệu và di chuyển file
+            success, message = file_model.update_parent(file_id, folder_id)
+            
+            if success:
+                success_count += 1
+                # Get the updated file path for confirmation
+                updated_file = file_model.get_file_by_id(file_id)
+                results.append({
+                    "file_id": file_id, 
+                    "status": "success",
+                    "old_path": file.get('filepath'),
+                    "new_path": updated_file.get('filepath') if updated_file else "unknown"
+                })
+                print(f"Successfully updated file {file_id}")
+            else:
+                errors.append(f"Failed to update file {file_id}: {message}")
+                results.append({"file_id": file_id, "status": "error", "message": message})
+                print(f"Failed to update file {file_id}: {message}")
+
+        return {
+            "message": f"Updated {success_count} of {len(file_ids)} files successfully",
+            "data": {
+                "folder_id": folder_id, 
+                "folder_name": folder.get('name'),
+                "results": results,
+                "errors": errors if errors else None
+            }
+        }
+    except Exception as e:
+        print(f"Error in update_parent API: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router_file.post("/update-name")
+async def update_name(
+    file_id: int = Form(..., description="ID file cần đổi tên"),
+    name: str = Form(..., description="Tên mới của file"),  # Changed from new_name to name to match frontend
+    current_user: str = Depends(authenticate)
+):
+    """Update the name of a file in the database"""
+    try:
+        file = file_model.get_file_by_id(file_id)
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check if the file name changed
+        if file.get('name') == name:
+            return {
+                "message": "File name unchanged",
+                "data": {
+                    "file_id": file_id,
+                    "name": name
+                }
+            }
+        
+        # Update the name in the database
+        success = file_model.update_name(file_id, name)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update file name")
+        
+        return {
+            "message": "File name updated successfully",
+            "data": {
+                "file_id": file_id,
+                "name": name
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in update_name API: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router_file.get("/debug/filepath/{file_id}")
+async def debug_filepath(
+    file_id: int,
+    current_user: str = Depends(authenticate)
+):
+    """Debug endpoint to check the current filepath in the database"""
+    try:
+        # Get file directly from database
+        with db.get_cursor() as cursor:
+            cursor.execute("SELECT id, name, filepath, folder_id FROM files WHERE id = ?", (file_id,))
+            file_data = cursor.fetchone()
+            
+            if not file_data:
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            # Get folder info if folder_id exists
+            folder_info = None
+            if file_data[3]:  # folder_id
+                cursor.execute("SELECT id, name, slug FROM folders WHERE id = ?", (file_data[3],))
+                folder_info = cursor.fetchone()
+            
+            # Check if the file exists at the stored path
+            file_exists = os.path.exists(file_data[2]) if file_data[2] else False
+            
+            return {
+                "message": "File path debug info",
+                "data": {
+                    "file_id": file_data[0],
+                    "file_name": file_data[1],
+                    "filepath_in_db": file_data[2],
+                    "file_exists_at_path": file_exists,
+                    "folder_id": file_data[3],
+                    "folder_info": {
+                        "id": folder_info[0] if folder_info else None,
+                        "name": folder_info[1] if folder_info else None,
+                        "slug": folder_info[2] if folder_info else None
+                    } if folder_info else None
+                }
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving file path info: {str(e)}")
