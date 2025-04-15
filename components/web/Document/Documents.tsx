@@ -21,6 +21,10 @@ import { useDocument } from "@/hooks/use-document";
 import FolderItem from "./Folder/FolderItem";
 import FileItem from "./File/FileItem";
 import { useFileDownload } from "@/hooks/use-file-download";
+import { useChatStore } from "@/lib/store/chat-store";
+
+import MoveFileDialog from "./Folder/MoveFileDialog";
+
 
 interface DocumentProps {
   id: string;
@@ -39,6 +43,7 @@ export default function DocumentsComponent({ id }: DocumentProps) {
     isLoading,
     fetchFolders,
     fetchFiles,
+    refreshData,
     handleDeleteFolder,
     handleUpdateFolder,
     handleDeleteFiles,
@@ -46,36 +51,38 @@ export default function DocumentsComponent({ id }: DocumentProps) {
     setNullFiles,
   } = useDocument({ initialFolderId: id });
   const { handleFileView } = useFileDownload();
+  const selectedFiles = useChatStore((state) => state.files);
   // Function to handle going back to parent folder
   const handleBack = () => {
-    if (pathname.startsWith('/document/')) {
+    if (pathname.startsWith("/document/")) {
       // Extract current path segments
-      const segments = pathname.split('/').filter(Boolean);
+      const segments = pathname.split("/").filter(Boolean);
       // Remove 'document' from the path
       segments.shift();
-      
+
       // If we have more than one segment, go back to parent
       if (segments.length > 1) {
         // Remove the last segment (current folder)
         segments.pop();
-        router.push(`/document/${segments.join('/')}`);
+        router.push(`/document/${segments.join("/")}`);
       } else {
         // If we're at the root level of documents, go to home or documents root
-        router.push('/document');
+        router.push("/document");
       }
     }
   };
 
   // Check if we should show the back button
-  const showBackButton = pathname.startsWith('/document/') && 
-    pathname.split('/').filter(Boolean).length > 2;
-  
+  const showBackButton =
+    pathname.startsWith("/document/") &&
+    pathname.split("/").filter(Boolean).length > 2;
+
   useEffect(() => {
     fetchFolders();
     fetchFiles();
     setNullFiles();
   }, [fetchFolders, fetchFiles, setNullFiles]);
-
+ 
   const renderRowFolder = () => {
     if (!isLoading && folders.length === 0 && files.length === 0) {
       return (
@@ -100,7 +107,7 @@ export default function DocumentsComponent({ id }: DocumentProps) {
     return (
       folders.length > 0 &&
       folders.map((folder) => (
-        <FolderItem 
+        <FolderItem
           key={folder.id}
           folder={folder}
           onDelete={handleDeleteFolder}
@@ -127,25 +134,34 @@ export default function DocumentsComponent({ id }: DocumentProps) {
   };
 
   const renderLoadingSkeleton = () => {
-    return Array(3).fill(0).map((_, index) => (
-      <TableRow key={index}>
-        <TableCell className="py-3">
-          <Skeleton className="h-4 w-4" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-5 w-1/2" />
-        </TableCell>
-        <TableCell className="hidden md:table-cell">
-          <Skeleton className="h-4 w-1/4" />
-        </TableCell>
-        <TableCell className="hidden sm:table-cell">
-          <Skeleton className="h-4 w-1/4" />
-        </TableCell>
-        <TableCell className="text-right">
-          <Skeleton className="h-4 w-8 ml-auto" />
-        </TableCell>
-      </TableRow>
-    ));
+    return Array(3)
+      .fill(0)
+      .map((_, index) => (
+        <TableRow key={index}>
+          <TableCell className="py-3">
+            <Skeleton className="h-4 w-4" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-5 w-1/2" />
+          </TableCell>
+          <TableCell className="hidden md:table-cell">
+            <Skeleton className="h-4 w-1/4" />
+          </TableCell>
+          <TableCell className="hidden sm:table-cell">
+            <Skeleton className="h-4 w-1/4" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="h-4 w-8 ml-auto" />
+          </TableCell>
+        </TableRow>
+      ));
+  };
+
+  const renderButtonMoveFiles = () => {
+    return (
+      <MoveFileDialog 
+      refreshData={refreshData} />
+    );
   };
 
   return (
@@ -153,9 +169,9 @@ export default function DocumentsComponent({ id }: DocumentProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
         <div className="flex flex-row items-center space-x-2">
           {showBackButton && (
-            <Button 
-              variant="outline" 
-              size="icon" 
+            <Button
+              variant="outline"
+              size="icon"
               onClick={handleBack}
               className="mr-1"
               title="Quay lại thư mục cha"
@@ -172,11 +188,13 @@ export default function DocumentsComponent({ id }: DocumentProps) {
             <CreateFileDialog parentId={id} fetchFilesAction={fetchFiles} />
           </div>
         </div>
-        <div className="w-full sm:w-auto mt-2 sm:mt-0">
+
+        <div className="flex flex-row items-center space-x-2 w-full sm:w-auto mt-2 sm:mt-0">
+          <div>{selectedFiles.length > 0 && renderButtonMoveFiles()}</div>
           <SearchIcon search={search} setSearch={setSearch} />
         </div>
       </div>
-      
+
       <div className="rounded-lg border border-indigo-100 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -184,9 +202,7 @@ export default function DocumentsComponent({ id }: DocumentProps) {
               <TableRow className="bg-sky-50 hover:bg-sky-100">
                 <TableHead className="w-[50px] py-3 font-medium"></TableHead>
                 <TableHead className="w-[80px] py-3 font-medium"></TableHead>
-                <TableHead className="font-medium text-black">
-                  Tên
-                </TableHead>
+                <TableHead className="font-medium text-black">Tên</TableHead>
                 <TableHead className="hidden md:table-cell font-medium text-black">
                   Kích thước
                 </TableHead>
@@ -197,7 +213,9 @@ export default function DocumentsComponent({ id }: DocumentProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? renderLoadingSkeleton() : (
+              {isLoading ? (
+                renderLoadingSkeleton()
+              ) : (
                 <>
                   {renderRowFolder()}
                   {renderRowFile()}

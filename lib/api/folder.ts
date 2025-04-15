@@ -111,3 +111,24 @@ export async function deleteFolder(id: string){
         throw error;
     }
 }
+
+
+export async function getTreeFolder(){
+    try {
+        const response = await fetch(`${API_URL}/folders/build-tree/`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        if(response.ok)
+        {
+            const results = await response.json();
+            return results.data;
+        }
+        throw new Error("Failed to fetch tree folder");
+    }
+    catch (error) {
+        throw error;
+    }
+}

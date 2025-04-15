@@ -166,3 +166,53 @@ export async function deleteFiles(files: File[]){
         throw error;
     }
 }
+
+
+export async function updateParentFolder(fileIds: string[], folder_id: number){
+    try{
+        const formData = new FormData();
+        fileIds.forEach((fileId)=>{
+            formData.append("file_ids", fileId);
+        });
+        formData.append("folder_id", folder_id.toString());
+        const response = await fetch(`${API_URL}/files/update-parent/`, {
+            method:'POST',
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            body: formData
+        });
+        if(!response.ok){
+            throw new Error('Update failed');
+        }
+        const result = await response.json();
+        return result;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
+
+export async function updateFileName(fileId: number, name: string){
+    try{
+        const formData = new FormData();
+        formData.append("file_id", fileId.toString());
+        formData.append("name", name);
+        const response = await fetch(`${API_URL}/files/update-name/`, {
+            method:'POST',
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            body: formData
+        });
+        if(!response.ok){
+            throw new Error('Update failed');
+        }
+        const result = await response.json();
+        return result;
+    }
+    catch(error) {
+        throw error;
+    }
+}

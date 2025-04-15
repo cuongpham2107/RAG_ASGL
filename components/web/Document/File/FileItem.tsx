@@ -1,7 +1,7 @@
 import { getFileIcon } from "@/lib/contants";
 import { File } from "@/lib/types";
 import { getFileSize } from "@/lib/utils";
-import { CloudDownload, Eye, Trash2 } from "lucide-react";
+import { CloudDownload, Eye, PenBox, Trash2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -12,6 +12,10 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useChatStore } from "@/lib/store/chat-store";
 import { ClientPermissionGuard } from "@/components/hoc/withPermission";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { updateFileName } from "@/lib/api/file";
+import { toast } from "@/hooks/use-toast";
 
 interface FileItemProps {
   file: File;
@@ -34,7 +38,12 @@ export default function FileItem({
   const isSelected = useChatStore((state) => state.isSelected(file.id));
   const setFiles = useChatStore((state) => state.setFiles);
   const addFiles = useChatStore((state) => state.addFiles);
-  
+
+  const [editNameFile, setEditNameFile] = useState({
+    open: false,
+    file: file,
+  });
+
   // Toggle selection with multi-select support
   const toggleSelection = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,10 +83,42 @@ export default function FileItem({
       toggleFile(file);
     }
   };
-
+  const renderEditNameFileButton = () => {
+    return (
+      <ClientPermissionGuard permission="edit_files">
+        <div
+          className="flex items-center justify-center bg-gray-100 rounded-xl w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 transition-all duration-200 hover:bg-green-100 hover:shadow-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TooltipProvider delayDuration={200} skipDelayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditNameFile((prev) => ({
+                    ...prev,
+                    open: true,
+                    file: file,
+                  }));
+                }}
+              >
+                <PenBox
+                  size={14}
+                  className="text-black hover:text-green-600 sm:size-[16px] md:size-[18px]"
+                />
+              </TooltipTrigger>
+              <TooltipContent className="mb-2 bg-white border border-green-400 text-green-600 font-medium">
+                <p>Đổi tên</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </ClientPermissionGuard>
+    );
+  };
   const renderViewButton = () => {
     // Only render the view button for PDF files
-    if (!file.filepath || !file.filepath.toLowerCase().endsWith('.pdf')) {
+    if (!file.filepath || !file.filepath.toLowerCase().endsWith(".pdf")) {
       return null;
     }
 
@@ -202,9 +243,53 @@ export default function FileItem({
           </div>
         </TableCell>
         <TableCell className="font-medium w-1/3 p-2 truncate">
-          <span className="line-clamp-1 transition-all duration-200 hover:text-sky-600">
-            {file.name}
-          </span>
+          {editNameFile.open && editNameFile.file.id === file.id ? (
+            <Input
+              className="w-full"
+              value={editNameFile.file.name}
+              onChange={(e) => {
+                setEditNameFile({
+                  ...editNameFile,
+                  file: {
+                    ...editNameFile.file,
+                    name: e.target.value,
+                  },
+                });
+                file.name = e.target.value;
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  await updateFileName(Number(file.id), editNameFile.file.name);
+                  setEditNameFile({
+                    open: false,
+                    file: {
+                      ...file,
+                      name: editNameFile.file.name,
+                    },
+                  });
+                  file.name =  editNameFile.file.name;
+
+                  toast({
+                    title: "Thành công",
+                    description: "Đã đổi tên file thành công",
+                    variant: "default",
+                  })
+                }
+              }}
+              onBlur={() => {
+                setEditNameFile({
+                  open: false,
+                  file: file,
+                });
+              }}
+              placeholder={file.name}
+              autoFocus
+            />
+          ) : (
+            <span className="line-clamp-1 transition-all duration-200 hover:text-sky-600">
+              {file.name}
+            </span>
+          )}
         </TableCell>
         <TableCell className="text-center p-2 whitespace-nowrap text-xs sm:text-sm text-gray-600">
           {getFileSize(file.file_size)}
@@ -216,6 +301,7 @@ export default function FileItem({
           <div className="flex flex-row space-x-1 sm:space-x-2 items-center justify-end">
             {renderViewButton()}
             {renderDownloadButton()}
+            {renderEditNameFileButton()}
             {renderDeleteButton()}
           </div>
         </TableCell>
