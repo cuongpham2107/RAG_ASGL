@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import InforProfile from "../Profile/Infor";
 import Link from "next/link";
+
+import GlobalSearch from "@/components/web/GlobalSearch";
+
+
 export function Header() {
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
@@ -30,11 +34,12 @@ export function Header() {
   };
   return (
     <header className="relative">
-      <div className="absolute top-0 left-0 w-full h-[60px] ">
-        <SidebarTrigger className="m-2" />
+      <div className="absolute top-0 left-0 flex items-center gap-2 p-2 z-10 pointer-events-auto">
+        <SidebarTrigger className="border border-input bg-background p-4" />
+        <GlobalSearch />
       </div>
 
-      <div className="absolute top-0 right-0 w-full h-[60px] flex items-center justify-end pr-2">
+      <div className="absolute top-0 right-0 w-full h-[60px] flex items-center justify-end pr-2 z-[5]">
       <Popover>
         <PopoverTrigger>
           <Avatar>

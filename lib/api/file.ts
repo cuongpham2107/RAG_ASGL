@@ -80,7 +80,7 @@ export async function getAllFiles(
         if(response.ok)
         {
             const results = await response.json();
-            return results;
+            return results.data;
         }
         throw new Error("Failed to fetch folders");
     } catch (error) {

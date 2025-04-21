@@ -13,7 +13,7 @@ import { CreateFolderDialog } from "./Folder/CreateFolderDialog";
 import { CreateFileDialog } from "./File/CreateFileDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 import EmptyCard from "../EmptyItem";
@@ -24,7 +24,7 @@ import { useFileDownload } from "@/hooks/use-file-download";
 import { useChatStore } from "@/lib/store/chat-store";
 
 import MoveFileDialog from "./Folder/MoveFileDialog";
-
+import { ClientPermissionGuard } from "@/components/hoc/withPermission";
 
 interface DocumentProps {
   id: string;
@@ -163,6 +163,22 @@ export default function DocumentsComponent({ id }: DocumentProps) {
       refreshData={refreshData} />
     );
   };
+  const renderButtonDeletesFiles = () => {
+    return (
+      <ClientPermissionGuard permission="delete_files">
+      <div 
+        className="bg-gray-200 hover:bg-gray-300  p-2 rounded-xl relative cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDeleteFiles([...selectedFiles]);
+        }}
+      >
+        <Trash2 className="h-4 w-4 font-semibold text-red-500" />
+        <span className="absolute w-4 h-4 -top-2 -right-1 text-[10px] flex items-center justify-center bg-red-500 text-white rounded-full">{selectedFiles.length}</span>
+      </div>
+      </ClientPermissionGuard>
+    )
+  }
 
   return (
     <div className="flex flex-col space-y-4 p-2 md:p-4 bg-white rounded-lg shadow-sm">
@@ -186,11 +202,21 @@ export default function DocumentsComponent({ id }: DocumentProps) {
               fetchFilesAction={fetchFiles}
             />
             <CreateFileDialog parentId={id} fetchFilesAction={fetchFiles} />
+            
           </div>
         </div>
 
         <div className="flex flex-row items-center space-x-2 w-full sm:w-auto mt-2 sm:mt-0">
-          <div>{selectedFiles.length > 0 && renderButtonMoveFiles()}</div>
+          <div className="flex flex-row items-center space-x-2">
+            {
+            selectedFiles.length > 0 && 
+            <>
+              {renderButtonMoveFiles()}
+              {renderButtonDeletesFiles()}
+            </>
+            }
+          </div>
+          
           <SearchIcon search={search} setSearch={setSearch} />
         </div>
       </div>

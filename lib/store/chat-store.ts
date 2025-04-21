@@ -62,7 +62,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }),
     
     isSelected: (id) => {
-        return get().files.some(file => file.id === id);
+        // Convert ID to string for consistent comparison
+        const stringId = String(id);
+        return get().files.some(file => String(file.id) === stringId);
     },
     
     selectAll: (files) => set({ files }),
