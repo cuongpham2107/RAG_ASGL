@@ -134,8 +134,13 @@ class DocumentProcessor:
         elif filename.endswith(".csv"):
             print("📄 Using CSVLoader")
             return CSVLoader(filepath)
-
-        elif filename.endswith(".docx") or filename.endswith(".doc"):
+        
+        elif filename.endswith(".doc"):
+            print("📄 Using UnstructuredFileLoader for .doc file")
+            from langchain_unstructured import UnstructuredLoader
+            return UnstructuredLoader(filepath)
+        
+        elif filename.endswith(".docx"):
             print("📄 Using Docx2txtLoader")
             return Docx2txtLoader(filepath)
 

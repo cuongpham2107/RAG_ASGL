@@ -17,24 +17,61 @@ class FileModel(BaseModel):
         """
         count_query = "SELECT COUNT(*) FROM files f"
         params = []
-
-        # Add search condition
+        
+        # Clean search parameter 
         if search:
-            query += " WHERE f.name LIKE ? OR f.slug LIKE ?"
-            count_query += " WHERE f.name LIKE ? OR f.slug LIKE ?"
-            params.extend([f"%{search}%", f"%{search}%"])
+            # Remove extra spaces
+            search = search.strip()
+            print(f"Searching for: '{search}', length: {len(search)}")
+            
+            # Modify query to use LOWER function for case-insensitive search
+            query += " WHERE LOWER(f.name) LIKE LOWER(?)"
+            count_query += " WHERE LOWER(f.name) LIKE LOWER(?)"
+            
+            # Add wildcard % to the start and end for partial matching
+            search_param = f"%{search}%"
+            params.append(search_param)
+            print(f"Search parameter: '{search_param}'")
+
+        # Get total count first (before pagination)
+        total = self.execute_single(count_query, params)[0]
+        print(f"Total matching records: {total}")
+
+        # Check if skip is valid
+        if skip >= total:
+            print(f"Warning: skip value ({skip}) is greater than or equal to total records ({total})")
+            # Adjust skip to get at least one result if possible
+            skip = max(0, total - 1) if total > 0 else 0
+            print(f"Adjusted skip to {skip}")
 
         # Add pagination
         query += " LIMIT ? OFFSET ?"
         params.extend([limit, skip])
-
-        # Get total count
-        total = self.execute_single(count_query, params[:-2])[0]
+        
+        # Print full query with parameters for debugging
+        print(f"Full query: {query}")
+        print(f"Parameters: {params}")
 
         # Get records
         rows = self.execute_query(query, tuple(params))
+        print(f"Fetched rows count: {len(rows)}")
+        
         files = [self.row_to_dict(row, self.COLUMNS) for row in rows]
-
+        
+        # Debug the first few results
+        if files:
+            print(f"Sample result name: '{files[0].get('name')}'")
+        else:
+            # Debug rows in the database that might match
+            debug_rows = self.execute_query(
+                "SELECT id, name FROM files WHERE name LIKE ?", 
+                (f"%{search}%",)
+            )
+            if debug_rows:
+                print(f"Found {len(debug_rows)} rows with direct LIKE match:")
+                for row in debug_rows:
+                    print(f"  ID: {row[0]}, Name: '{row[1]}'")
+        
         return files, total
 
     def get_all_files(self) -> List[Dict]:

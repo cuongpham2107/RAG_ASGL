@@ -19,6 +19,8 @@ chromadb
 langchain-chroma
 docx2txt
 unstructured
+unstructured[doc]
+langchain-unstructured
 unstructured_inference
 ocrmypdf
 openpyxl
@@ -26,3 +28,5 @@ openpyxl
 #mcp
 mcp
 mcp[cli]
+
+
